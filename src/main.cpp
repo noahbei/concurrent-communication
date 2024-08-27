@@ -4,10 +4,34 @@
 #include <ESPAsyncWebServer.h>
 #include <ElegantOTA.h>
 #include "wifi-config.h"
-
+#include "main.h"
 AsyncWebServer server(80);
 
 unsigned long ota_progress_millis = 0;
+
+void setup(void) {
+  Serial.begin(115200);
+  wifiSetup();
+
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "Hi! This is ElegantOTA AsyncDemo.");
+  });
+
+  // ElegantOTA initialization
+  ElegantOTA.begin(&server);
+  ElegantOTA.onStart(onOTAStart);
+  ElegantOTA.onProgress(onOTAProgress);
+  ElegantOTA.onEnd(onOTAEnd);
+
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop(void) {
+  ElegantOTA.loop();
+
+  //do stuff here
+}
 
 void onOTAStart() {
   // Log when OTA has started
@@ -33,8 +57,7 @@ void onOTAEnd(bool success) {
   // <Add your own code here>
 }
 
-void setup(void) {
-  Serial.begin(115200);
+void wifiSetup() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.println("");
@@ -49,21 +72,4 @@ void setup(void) {
   Serial.println(WIFI_SSID);
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", "Hi! This is ElegantOTA AsyncDemo.");
-  });
-
-  ElegantOTA.begin(&server);    // Start ElegantOTA
-  // ElegantOTA callbacks
-  ElegantOTA.onStart(onOTAStart);
-  ElegantOTA.onProgress(onOTAProgress);
-  ElegantOTA.onEnd(onOTAEnd);
-
-  server.begin();
-  Serial.println("HTTP server started");
-}
-
-void loop(void) {
-  ElegantOTA.loop();
 }
